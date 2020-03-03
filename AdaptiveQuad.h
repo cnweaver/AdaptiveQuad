@@ -219,7 +219,8 @@ namespace AdaptiveQuad{
 		if(is==0)
 			is=b-a;
 		is=std::abs(is);
-		if(i.badness(tol*is) <= 0){
+		tol*=is; //convert to an absolute tolerance
+		if(i.badness(tol) <= 0){
 			if(options){
 				options->uncertainty=erri1;
 				options->outOfTolerance=false;
@@ -241,7 +242,8 @@ namespace AdaptiveQuad{
 			total=t;
 			//Not being particularly concerned about the uncertainty on the 
 			//uncertainty, we do not use compensated summation for it. 
-			unc+=std::abs(contribution-est2);
+			double uncc=contribution-est2;
+			unc+=uncc*uncc;
 		};
 		while(!intervals.empty()){
 			const Interval& i=intervals.back();
@@ -256,7 +258,7 @@ namespace AdaptiveQuad{
 			//subdivide it further. If there is not, or subdivision is not 
 			//possible, commit its contribution to the total estimate. 
 			auto processSubinterval=[&](Interval& i){
-				if(i.badness(tol*is)<=0 || !i.canSubdivide()){
+				if(i.badness(tol)<=0 || !i.canSubdivide()){
 					if(!i.canSubdivide())
 						outOfTolerance=true;
 					accumulate(i.value,i.i2);
@@ -269,7 +271,7 @@ namespace AdaptiveQuad{
 			processSubinterval(i3);
 		}
 		if(options){
-			options->uncertainty=unc;
+			options->uncertainty=sqrt(unc)*(R>0 && R<1?R:1);
 			options->outOfTolerance=outOfTolerance;
 		}
 		if(reverse)
