@@ -419,14 +419,13 @@ ResultMap testFunction(const FuncBase& func, double tolerance){
 	try{
 		auto f=func.copy();
 		AdaptiveQuad::Options opt;
-		opt.fa=(*f)(a);
-		opt.fb=(*f)(b);
 		double i=AdaptiveQuad::integrate(*f,a,b,tolerance,&opt);
 		TestResult result;
 		result.relativeError=(i-exact)/exact;
 		result.evaluations=f->calls;
 		results.emplace("AdaptQuad",result);
 		std::cout << " AdaptQuad: " << i << " with " << f->calls << " evaluations, relative error " << (i-exact)/exact << std::endl;
+		//std::cout << "  Estimated error: " << opt.uncertainty << ", " << opt.uncertainty/i << " relative" << std::endl;
 	}catch(std::exception& ex){
 		TestResult result;
 		result.failed=true;
@@ -737,10 +736,12 @@ int main(int argc, char* argv[]){
 	for(const auto& summary : precSums)
 		std::cout << summary.first << ": " << summary.second << std::endl;
 	
-	std::cout << '\n';
-	for(const auto& funcName : functionsToTest){
-		const auto& func=testFunctions[funcName];
-		std::cout << '(' << funcName << ") ";
-		auto results=timeFunction(*func,tolerance,timingIterations);
+	if(doTiming){
+		std::cout << '\n';
+		for(const auto& funcName : functionsToTest){
+			const auto& func=testFunctions[funcName];
+			std::cout << '(' << funcName << ") ";
+			auto results=timeFunction(*func,tolerance,timingIterations);
+		}
 	}
 }
