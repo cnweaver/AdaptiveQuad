@@ -62,6 +62,8 @@ struct FuncCopy : public FuncBase{
 	}
 };
 
+static const double pi=4*atan(1);
+
 struct SplitTrig1 : public FuncCopy<SplitTrig1>{
 	virtual double Evaluate(double x) const override{
 		if(x<=2)
@@ -70,7 +72,7 @@ struct SplitTrig1 : public FuncCopy<SplitTrig1>{
 			return std::cos(x);
 	}
 	virtual double leftBoundary() const override{ return 0; }
-	virtual double rightBoundary() const override{ return 4*atan(1); }
+	virtual double rightBoundary() const override{ return pi; }
 	virtual double exactValue() const override{ return -cos(2)+1+0-sin(2); }
 	virtual const char* name() const override{ 
 		return "if x<=2 then sin(x) else cos(x) fi, Interval:[0,pi]"; 
@@ -122,11 +124,11 @@ struct Sqrt : public FuncCopy<Sqrt>{
 
 struct CoshCos : public FuncCopy<CoshCos>{
 	virtual double Evaluate(double x) const override{
-		return (23./25)*cosh(x)+cos(x);
+		return (23./25)*cosh(x)-cos(x);
 	}
 	virtual double leftBoundary() const override{ return -1; }
 	virtual double rightBoundary() const override{ return 1; }
-	virtual double exactValue() const override{ return (23./25)*(sinh(1)-sinh(-1))+sin(1)-sin(-1); }
+	virtual double exactValue() const override{ return (23./25)*(sinh(1)-sinh(-1))-sin(1)+sin(-1); }
 	virtual const char* name() const override{ return "(23/25)*cosh(x)-cos(x), Interval:[-1,1]"; }
 };
 
@@ -190,7 +192,6 @@ struct Rat2 : public FuncCopy<Rat2>{
 
 struct SinInv : public FuncCopy<SinInv>{
 	virtual double Evaluate(double x) const override{
-		static const double pi=4*atan(1);
 		return 2/(2+sin(10*pi*x));
 	}
 	virtual double leftBoundary() const override{ return 0; }
@@ -234,7 +235,6 @@ struct XExpInv : public FuncCopy<XExpInv>{
 	virtual double leftBoundary() const override{ return 0; }
 	virtual double rightBoundary() const override{ return 1; }
 	virtual double exactValue() const override{
-		static const double pi=4*atan(1.);
 		double Li2e=gsl_sf_dilog(exp(1));
 		double l1me=std::real(std::log(std::complex<double>(1,0)-exp(1)));
 		return (Li2e-1/2.+l1me)-(pi*pi/6);
@@ -246,13 +246,11 @@ struct XExpInv : public FuncCopy<XExpInv>{
 #ifdef HAVE_GSL //need GSL to compute the Sine integral
 struct Sinc : public FuncCopy<Sinc>{
 	virtual double Evaluate(double x) const override{
-		static const double pi=4.*atan(1);
 		return std::sin(100*pi*x)/(pi*x);
 	}
 	virtual double leftBoundary() const override{ return 0.1; }
 	virtual double rightBoundary() const override{ return 1; }
 	virtual double exactValue() const override{
-		static const double pi=4.*atan(1);
 		return (gsl_sf_Si(100*pi*rightBoundary())-gsl_sf_Si(100*pi*leftBoundary()))/pi;
 	}
 	virtual const char* name() const override{ return "sin(100*pi*x)/(pi*x), Interval:[0.1,1]"; }
@@ -261,7 +259,6 @@ struct Sinc : public FuncCopy<Sinc>{
 
 struct Gauss : public FuncCopy<Gauss>{
 	virtual double Evaluate(double x) const override{
-		static const double pi=4.*atan(1);
 		return sqrt(50)*exp(-50*pi*x*x);
 	}
 	virtual double leftBoundary() const override{ return 0; }
@@ -282,7 +279,6 @@ struct ExpFall : public FuncCopy<ExpFall>{
 
 struct Quad : public FuncCopy<Quad>{
 	virtual double Evaluate(double x) const override{
-		static const double pi=4.*atan(1);
 		return (50/pi)*(2500*x*x+1);
 	}
 	virtual double leftBoundary() const override{ return 0; }
@@ -294,7 +290,6 @@ struct Quad : public FuncCopy<Quad>{
 #ifdef HAVE_GSL //need GSL to compute the Sine integral
 struct SincSq : public FuncCopy<SincSq>{
 	virtual double Evaluate(double x) const override{
-		static const double pi=4.*atan(1);
 		double z=50*pi*x;
 		double t=std::sin(z)/z;
 		return 50*t*t;
@@ -302,7 +297,6 @@ struct SincSq : public FuncCopy<SincSq>{
 	virtual double leftBoundary() const override{ return 0.01; }
 	virtual double rightBoundary() const override{ return 1; }
 	virtual double exactValue() const override{
-		static const double pi=4.*atan(1);
 		auto antiderivative=[](double x){
 			return (100*pi*x*gsl_sf_Si(100*pi*x)+cos(100*pi*x)-1)/(100*pi*pi*x);
 		};
@@ -318,8 +312,144 @@ struct TrigNest : public FuncCopy<TrigNest>{
 	}
 	virtual double leftBoundary() const override{ return 0; }
 	virtual double rightBoundary() const override{ return 4.*atan(1); }
-	virtual double exactValue() const override{ return 0; throw std::runtime_error("Not implemented"); }
+	virtual double exactValue() const override{ 
+		//computed to 1000 bit precision with [Arb 2.17.0](http://arblib.org )
+		return 0.83867634269442961454255469958585619238767120351385205938868829\
+3504644851101479155675503106633012706779874410231876793049312598273628853435144\
+2982194430798236252839448764766360367461754186466596089584407812065539438248791\
+422401317743390901359102431468463089687352312708850513051855863497570421418956; 
+	}
 	virtual const char* name() const override{ return "cos(cos(x)+3sin(x)+2cos(2x)+3sin(2x)+3cos(3x), Interval:[0,pi]"; }
+};
+
+struct Log : public FuncCopy<Log>{
+	virtual double Evaluate(double x) const override{
+		if(x<=1e-15) return 0;
+		return log(x);
+	}
+	virtual double leftBoundary() const override{ return 0; }
+	virtual double rightBoundary() const override{ return 1; }
+	virtual double exactValue() const override{ return -1+(1e-15-1e-15*log(1e-15)); }
+	virtual const char* name() const override{ return "if x>1e−15 then log(x) else 0 fi, Interval:[0,1]"; }
+};
+
+struct QuadInv : public FuncCopy<QuadInv>{
+	virtual double Evaluate(double x) const override{
+		return 1/(x*x+1.005);
+	}
+	virtual double leftBoundary() const override{ return -1; }
+	virtual double rightBoundary() const override{ return 1; }
+	virtual double exactValue() const override{ return (2*atan(1/sqrt(1.005)))/sqrt(1.005); }
+	virtual const char* name() const override{ return "1/(x^2+1.005), Interval:[-1,1]"; }
+};
+
+struct CoshInvSum : public FuncCopy<CoshInvSum>{
+	static double sech(double x){
+		double ep=exp(x);
+		double em=exp(-x);
+		return 2/(ep+em);
+	};
+	static double sinh(double x){
+		double ep=exp(x);
+		double em=exp(-x);
+		return (ep-em)/2;
+	};
+	virtual double Evaluate(double x) const override{
+		double s1=sech(20*(x-.2));
+		double s2=sech(400*(x-.4));
+		double s3=sech(8000*(x-.6));
+		return s1+s2+s3;
+	}
+	virtual double leftBoundary() const override{ return 0; }
+	virtual double rightBoundary() const override{ return 1; }
+	virtual double exactValue() const override{
+		auto antiderivative=[](double x){
+			return atan(sinh(4-20*x))/-20 + atan(sinh(400*x-160))/400 + atan(sinh(8000*x-4800))/8000;
+		};
+		return antiderivative(rightBoundary())-antiderivative(leftBoundary());
+	}
+	virtual const char* name() const override{ return "sum(1/cosh(10^i*(x−0.2*i)*2^i),i=1..3), Interval:[-1,1]"; }
+};
+
+struct TrigProd : public FuncCopy<TrigProd>{
+	virtual double Evaluate(double x) const override{
+		return 4*pi*pi*x*sin(20*pi*x)*cos(2*pi*x);
+	}
+	virtual double leftBoundary() const override{ return 0; }
+	virtual double rightBoundary() const override{ return 1; }
+	virtual double exactValue() const override{
+		return -20*pi/99;
+	}
+	virtual const char* name() const override{ return "4*pi^2*x*sin(20*pi*x)*cos(2*pi*x), Interval:[0,1]"; }
+};
+
+struct QuadInv2 : public FuncCopy<QuadInv2>{
+	virtual double Evaluate(double x) const override{
+		double u=230*x-30;
+		return 1/(1+u*u);
+	}
+	virtual double leftBoundary() const override{ return 0; }
+	virtual double rightBoundary() const override{ return 1; }
+	virtual double exactValue() const override{
+		static const double a=901;
+		static const double b=2*230*-30;
+		static const double c=230*230;
+		static const double q=4*a*c-b*b;
+		auto antiderivative=[](double x){
+			return (2/sqrt(q))*atan((2*c*x+b)/sqrt(q));
+		};
+		return antiderivative(rightBoundary())-antiderivative(leftBoundary());
+	}
+	virtual const char* name() const override{ return "1/(1+(230*x-30)^2), Interval:[0,1]"; }
+};
+
+///a close relative of CoshInvSum
+struct Peak3 : public FuncCopy<Peak3>{
+	static double sech(double x){
+		double ep=exp(x);
+		double em=exp(-x);
+		return 2/(ep+em);
+	};
+	static double tanh(double x){
+		double ep=exp(x);
+		double em=exp(-x);
+		return (ep-em)/(ep+em);
+	};
+	
+	virtual double Evaluate(double x) const override{
+		double s1=sech(10*(x-0.2));
+		double s2=sech(100*(x-0.4));
+		double s3=sech(1000*(x-0.6));
+		return s1*s1 + s2*s2*s2*s2 + s3*s3*s3*s3*s3*s3;
+	}
+	virtual double leftBoundary() const override{ return 0; }
+	virtual double rightBoundary() const override{ return 1; }
+	virtual double exactValue() const override{ 
+		auto antiderivative=[](double x){
+			double s1=sech(200*(5*x-3));
+			double s2=sech(20*(5*x-2));
+			double t1=tanh(20*(5*x-2));
+			double t2=tanh(200*(5*x-3));
+			return -.1*tanh(2-10*x) + tanh(200*(5*x-3))/1875 + t1/150 + 
+				t1*(s2*s2)/300 + (t2*(s1*s1*s1*s1))/5000 + (t2*(s1*s1))/3750;
+		};
+		return antiderivative(rightBoundary())-antiderivative(leftBoundary());
+	}
+	virtual const char* name() const override{ return "sech^2(10(x-.2))+sech^4(100(x-.4))+sech^6(1000(x-.6)), Interval:[0,1]"; }
+};
+
+struct EllInv : public FuncCopy<EllInv>{
+	virtual double Evaluate(double x) const override{
+		if(x==1)
+			return 0;
+		return 1/sqrt(1-x*x);
+	}
+	virtual double leftBoundary() const override{ return 0; }
+	virtual double rightBoundary() const override{ return 1; }
+	virtual double exactValue() const override{
+		return asin(1);
+	}
+	virtual const char* name() const override{ return "1/sqrt(1-x^2), Interval:[0,1]"; }
 };
 
 struct TestResult{
@@ -507,7 +637,7 @@ std::map<std::string,double> timeFunction(const FuncBase& func, double tolerance
 				stats.insert(time);
 		}
 		std::cout << " adaptlob:  " << stats.mean() << '(' << stats.stddev() << ") ns with " 
-			<< f->calls/(iterations*rep) << " evaluations" << std::endl;
+			<< f->calls/(iterations*rep) << " evaluations (" << stats.count() << " measurements)" << std::endl;
 		results.emplace("adaptlob",stats.mean());
 	}catch(std::exception& ex){
 		std::cout << " adaptlob:  " << ex.what() << std::endl;
@@ -532,7 +662,7 @@ std::map<std::string,double> timeFunction(const FuncBase& func, double tolerance
 				stats.insert(time);
 		}
 		std::cout << " Romberg:   " << stats.mean() << '(' << stats.stddev() << ") ns with " 
-		<< f->calls/(iterations*rep) << " evaluations" << std::endl;
+		<< f->calls/(iterations*rep) << " evaluations (" << stats.count() << " measurements)" << std::endl;
 		results.emplace("Romberg",stats.mean());
 	}catch(std::exception& ex){
 		std::cout << " Romberg:   " << ex.what() << std::endl;
@@ -562,7 +692,7 @@ std::map<std::string,double> timeFunction(const FuncBase& func, double tolerance
 				stats.insert(time);
 		}
 		std::cout << " GSL::QAG:  " << stats.mean() << '(' << stats.stddev() << ") ns with " 
-		<< f->calls/(iterations*rep) << " evaluations" << std::endl;
+			<< f->calls/(iterations*rep) << " evaluations (" << stats.count() << " measurements)" << std::endl;
 		results.emplace("GSL::QAG",stats.mean());
 	}catch(std::exception& ex){
 		std::cout << " GSL::QAG:  " << ex.what() << std::endl;
@@ -591,7 +721,7 @@ std::map<std::string,double> timeFunction(const FuncBase& func, double tolerance
 				stats.insert(time);
 		}
 		std::cout << " NR::Adapt: " << stats.mean() << '(' << stats.stddev() << ") ns with " 
-		<< f->calls/(iterations*rep) << " evaluations" << std::endl;
+			<< f->calls/(iterations*rep) << " evaluations (" << stats.count() << " measurements)" << std::endl;
 		results.emplace("NR::Adapt",stats.mean());
 	}catch(std::exception& ex){
 		std::cout << " NR::Adapt: " << ex.what() << std::endl;
@@ -617,7 +747,7 @@ std::map<std::string,double> timeFunction(const FuncBase& func, double tolerance
 				stats.insert(time);
 		}
 		std::cout << " AdaptQuad: " << stats.mean() << '(' << stats.stddev() << ") ns with " 
-		<< f->calls/(iterations*rep) << " evaluations" << std::endl;
+			<< f->calls/(iterations*rep) << " evaluations (" << stats.count() << " measurements)" << std::endl;
 		results.emplace("AdaptQuad",stats.mean());
 	}catch(std::exception& ex){
 		std::cout << " AdaptQuad: " << ex.what() << std::endl;
@@ -655,7 +785,14 @@ int main(int argc, char* argv[]){
 	testFunctions.emplace("ExpFall",FuncPtr(new ExpFall));
 	testFunctions.emplace("Quad",FuncPtr(new Quad));
 	testFunctions.emplace("SincSq",FuncPtr(new SincSq));
-	//testFunctions.emplace("TrigNest",FuncPtr(new TrigNest));
+	testFunctions.emplace("TrigNest",FuncPtr(new TrigNest));
+	testFunctions.emplace("Log",FuncPtr(new Log));
+	testFunctions.emplace("QuadInv",FuncPtr(new QuadInv));
+	testFunctions.emplace("CoshInvSum",FuncPtr(new CoshInvSum));
+	testFunctions.emplace("TrigProd",FuncPtr(new TrigProd));
+	testFunctions.emplace("QuadInv2",FuncPtr(new QuadInv2));
+	//testFunctions.emplace("Peak3",FuncPtr(new Peak3));
+	testFunctions.emplace("EllInv",FuncPtr(new EllInv));
 	
 	std::set<std::string> functionsToTest;
 	
